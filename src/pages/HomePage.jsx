@@ -23,7 +23,7 @@ function HomePage() {
   const pageArticles = useSelector(selectPage)
   const status = useSelector(selectStatus)
   const dispatch = useDispatch()
-  const { push } = useNavigate()
+  const navigate = useNavigate()
   const [results, setResults] = useState(1)
 
   const fetchArticleData = useCallback(async () => {
@@ -62,7 +62,7 @@ function HomePage() {
               likesNumber={el?.favoritesCount}
               favorited={el?.favorited}
               slug={el?.slug}
-              onClick={() => push(`/articles/${el.slug}`)}
+              onClick={() => navigate(`/articles/${el.slug}`)}
             />
           ))}
           {articles.length > 0 && articlesPagination}

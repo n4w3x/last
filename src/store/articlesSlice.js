@@ -20,9 +20,7 @@ export const fetchArticles = createAsyncThunk(
       `${BASE_URL}articles?limit=5&offset=${offset}`,
       { headers }
     )
-    if (!response.ok) {
-      throw new Error("Server Error!")
-    }
+    if (!response.ok) throw new Error("Server Error!")
     const data = await response.json()
     return data.articles
   }
@@ -32,16 +30,12 @@ export const fetchCreateArticle = createAsyncThunk(
   "articles/fetchCreateArticle",
   async (userData) => {
     const token = localStorage.getItem("token")
-    const response = await axios.post(
-      `https://blog.kata.academy/api/articles`,
-      userData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      }
-    )
+    const response = await axios.post(`${BASE_URL}/articles`, userData, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+    })
     return response.data.article
   }
 )
@@ -50,30 +44,27 @@ export const fetchDeleteArticle = createAsyncThunk(
   "articles/fetchDeleteArticle",
   async (slug) => {
     const token = localStorage.getItem("token")
-    await axios.delete(`https://blog.kata.academy/api/articles/${slug}`, {
+    await axios.delete(`${BASE_URL}/articles/${slug}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Token ${token}`,
       },
     })
+    return slug
   }
 )
 
 export const fetchEditArticle = createAsyncThunk(
   "articles/fetchEditArticle",
-  async (payload) => {
-    const { slug } = payload
+  async ({ slug, userData }) => {
     const token = localStorage.getItem("token")
-    const response = await axios.put(
-      `https://blog.kata.academy/api/articles/${slug}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      }
-    )
-    return response.data
+    const response = await axios.put(`${BASE_URL}/articles/${slug}`, userData, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+    })
+    return response.data.article
   }
 )
 
@@ -100,7 +91,7 @@ export const fetchLikeDelete = createAsyncThunk(
   async (slug) => {
     const token = localStorage.getItem("token")
     const response = await axios.delete(
-      `https://blog.kata.academy/api/articles/${slug}/favorite`,
+      `${BASE_URL}/articles/${slug}/favorite`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -148,42 +139,31 @@ const articlesSlice = createSlice({
         state.error = action.error?.message || "Failed to fetch articles."
       })
 
-      .addCase(fetchCreateArticle.pending, (state) => {
-        state.status = "loading"
-        state.error = null
-      })
       .addCase(fetchCreateArticle.fulfilled, (state, action) => {
-        state.status = "resolved"
         state.articles.push(action.payload)
       })
-      .addCase(fetchCreateArticle.rejected, (state, action) => {
-        state.status = "rejected"
-        state.error = action.error?.message || "Failed to create article."
+
+      .addCase(fetchEditArticle.fulfilled, (state, action) => {
+        const editedArticle = action.payload
+        state.articles = state.articles.map((article) =>
+          article.slug === editedArticle.slug ? editedArticle : article
+        )
       })
 
-      .addCase(fetchEditArticle.pending, (state) => {
-        state.status = "loading"
-        state.error = null
-      })
-      .addCase(fetchEditArticle.fulfilled, (state, action) => {
-        state.status = "resolved"
-        state.articles.push(action.payload.article)
-      })
-      .addCase(fetchEditArticle.rejected, (state, action) => {
-        state.status = "rejected"
-        state.error = action.error?.message || "Failed to edit article."
+      .addCase(fetchDeleteArticle.fulfilled, (state, action) => {
+        const deletedSlug = action.payload
+        state.articles = state.articles.filter(
+          (article) => article.slug !== deletedSlug
+        )
       })
 
       .addCase(fetchLikeArticle.fulfilled, (state, action) => {
-        state.status = "resolved"
         state.articles = state.articles.map((article) =>
           article.slug === action.payload.slug ? action.payload : article
         )
         localStorage.setItem(`like_${action.payload.slug}`, true)
       })
-
       .addCase(fetchLikeDelete.fulfilled, (state, action) => {
-        state.status = "resolved"
         state.articles = state.articles.map((article) =>
           article.slug === action.payload.slug ? action.payload : article
         )
