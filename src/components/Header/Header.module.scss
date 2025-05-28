@@ -1,0 +1,113 @@
+.header {
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  background: #ffffff;
+}
+
+.wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 15px;
+}
+
+.title {
+  font-size: 18px;
+  line-height: 28px;
+  text-decoration: none;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.loginContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.signIn {
+  font-size: 18px;
+  line-height: 28px;
+  color: rgba(0, 0, 0, 0.85);
+  text-decoration: none;
+  background: unset;
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 8px 18px;
+}
+
+.signUp {
+  font-size: 18px;
+  line-height: 28px;
+  text-decoration: none;
+  background: unset;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 8px 18px;
+  color: rgb(82, 196, 26);
+  border: 1px solid rgb(82, 196, 26);
+
+  &:hover {
+    color: #ffffff;
+    background-color: rgb(82, 196, 26);
+  }
+}
+
+.buttonLogOut {
+  font-size: 18px;
+  line-height: 28px;
+  text-decoration: none;
+  background: unset;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 8px 18px;
+  color: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  margin-left: 10px;
+
+  &:hover {
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+}
+
+.buttonCreateArticle {
+  text-decoration: none;
+  background: unset;
+  cursor: pointer;
+  border-radius: 5px;
+  color: rgb(82, 196, 26);
+  border: 1px solid rgb(82, 196, 26);
+  font-size: 14px;
+  line-height: 22px;
+  padding: 6px 10px;
+
+  &:hover {
+    color: #ffffff;
+    background-color: rgb(82, 196, 26);
+  }
+}
+
+.nameUser {
+  font-size: 18px;
+  line-height: 28px;
+  color: rgba(0, 0, 0, 0.85);
+  margin: 0px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 10px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.imageUser {
+  width: 46px;
+  height: 46px px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.75);
+  margin-left: 10px;
+}

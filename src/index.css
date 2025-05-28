@@ -1,0 +1,22 @@
+@import "normalize.css/normalize.css";
+*,
+html,
+body {
+  padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  font-family:
+    Inter UI,
+    sans-serif;
+  user-select: none;
+}
+
+body {
+  overflow: hidden;
+}
+
+.ant-pagination {
+  position: absolute;
+  left: 28%;
+  bottom: -50px;
+}

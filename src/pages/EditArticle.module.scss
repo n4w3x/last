@@ -1,0 +1,191 @@
+.formContainer {
+  position: relative;
+  background: rgb(255, 255, 255);
+  border: 1px solid rgb(217, 217, 217);
+  box-shadow:
+    rgba(0, 0, 0, 0.07) 0px 22px 106px,
+    rgba(0, 0, 0, 0.05) 0px 9.19107px 44.2843px,
+    rgba(0, 0, 0, 0.043) 0px 4.91399px 23.6765px,
+    rgba(0, 0, 0, 0.035) 0px 2.75474px 13.2728px,
+    rgba(0, 0, 0, 0.027) 0px 1.46302px 7.04911px,
+    rgba(0, 0, 0, 0.02) 0px 0.608796px 2.93329px;
+  border-radius: 6px;
+  width: 850px;
+  margin: 10px auto 0;
+  box-sizing: border-box;
+  padding: 36px 32px 46px;
+  min-height: 680px;
+}
+
+.formTitle {
+  margin: 0px 0px 21px;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 28px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.75);
+}
+.submitButton {
+  display: block;
+  width: 320px;
+  height: 35px;
+  box-sizing: border-box;
+  background: rgb(24, 144, 255);
+  border-radius: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgb(24, 144, 255);
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.submitButton.disabled {
+  background: rgba(24, 144, 255, 0.5);
+  border-color: rgba(24, 144, 255, 0.5);
+}
+
+.submitButton.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  opacity: 1;
+}
+.input {
+  font-family: inherit;
+  background: rgb(255, 255, 255);
+  border: 1px solid rgb(217, 217, 217);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.75);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+}
+
+.tagInput {
+  font-family: inherit;
+  background: rgb(255, 255, 255);
+  border: 1px solid rgb(217, 217, 217);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.75);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  width: 300px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  margin-top: 10px;
+}
+
+.textInput {
+  font-family: inherit;
+  background: rgb(255, 255, 255);
+  border: 1px solid rgb(217, 217, 217);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.75);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  min-height: 170px;
+}
+
+.submitButton {
+  display: block;
+  width: 320px;
+  box-sizing: border-box;
+  background: rgb(24, 144, 255);
+  border-radius: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgb(24, 144, 255);
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  margin-top: 10px;
+
+  &:disabled {
+    background: rgba(24, 144, 255, 0.5);
+    border-color: rgba(24, 144, 255, 0.5);
+  }
+}
+
+.incorrectData {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.labelContainer {
+  margin-bottom: 12px;
+}
+
+.titleInput {
+  margin-left: 10px;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.titleTag {
+  margin-left: 10px;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.buttonAddTag {
+  text-decoration: none;
+  background: unset;
+  border: 1px solid rgb(24, 144, 255);
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  line-height: 22px;
+  padding: 6px 10px;
+  color: rgb(24, 144, 255);
+  margin-left: 10px;
+}
+
+.buttonDeleteTag {
+  text-decoration: none;
+  background: unset;
+  border: 1px solid rgb(245, 34, 45);
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  line-height: 22px;
+  padding: 6px 10px;
+  color: rgb(245, 34, 45);
+  margin-left: 15px;
+}
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}

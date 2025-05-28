@@ -1,0 +1,104 @@
+.wrapper {
+  background-color: #ffffff;
+  overflow: hidden;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 5px;
+  filter: drop-shadow(rgba(0, 0, 0, 0.15) 0px 4px 12px);
+  padding: 15px;
+  height: 100px;
+}
+
+.cardLeft {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  color: rgb(24, 144, 255);
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.cardTitle {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  color: rgb(24, 144, 255);
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.cardTags {
+  max-width: 670px;
+}
+
+.tag {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 15px;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 3px 5px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  margin: 0 2px;
+}
+
+.cardDescription {
+  font-size: 12px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.75);
+  margin: 0px;
+}
+
+.cardRight {
+  display: flex;
+  align-items: flex-start;
+}
+
+.cardContainerRight {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardImage {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-left: 10px;
+}
+
+.cardAuthor {
+  font-size: 18px;
+  line-height: 28px;
+  color: rgba(0, 0, 0, 0.85);
+  margin: 0px;
+  font-weight: 600;
+}
+
+.cardDate {
+  font-size: 12px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.5);
+  margin: 0px;
+  text-align: end;
+}
+
+.titleContainer {
+  display: flex;
+}
+
+.likeContainer {
+  cursor: pointer;
+}
+
+.likeCount {
+  font-size: 12px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.75);
+  position: relative;
+  bottom: 3px;
+}
