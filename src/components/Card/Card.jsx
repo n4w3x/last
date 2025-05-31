@@ -1,14 +1,17 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React from "react"
+import React, { useState } from "react"
 import PropTypes from "prop-types"
 import { format } from "date-fns"
 import _ from "lodash"
 import { IoHeartOutline, IoHeartSharp } from "react-icons/io5"
-import { fetchLikeArticle, fetchLikeDelete } from "../../store/articlesSlice"
-import { useDispatch, useSelector } from "react-redux"
-import { selectIsAuth } from "../../store/authSlice"
+import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
+import {
+  useLikeArticleMutation,
+  useUnlikeArticleMutation,
+  apiSlice,
+} from "../../service/apiSlice"
 import styles from "./Card.module.scss"
 
 function Card({
@@ -23,20 +26,39 @@ function Card({
   onClick,
   slug,
 }) {
-  const dispatch = useDispatch()
-  const isAuth = useSelector(selectIsAuth)
+  const isAuth = Boolean(localStorage.getItem("token"))
   const navigate = useNavigate()
-  const handleLikeClick = () => {
-    if (isAuth) {
-      if (!favorited) {
-        dispatch(fetchLikeArticle(slug))
+  const dispatch = useDispatch()
+
+  const [likeArticle] = useLikeArticleMutation()
+  const [unlikeArticle] = useUnlikeArticleMutation()
+
+  const [localFavorited, setLocalFavorited] = useState(favorited)
+  const [localLikes, setLocalLikes] = useState(likesNumber)
+
+  const handleLikeClick = async () => {
+    if (!isAuth) {
+      navigate("/sign-in")
+      return
+    }
+
+    try {
+      if (!localFavorited) {
+        await likeArticle(slug).unwrap()
+        setLocalFavorited(true)
+        setLocalLikes((prev) => prev + 1)
       } else {
-        dispatch(fetchLikeDelete(slug))
+        await unlikeArticle(slug).unwrap()
+        setLocalFavorited(false)
+        setLocalLikes((prev) => prev - 1)
       }
-    } else {
-      navigate("/")
+
+      dispatch(apiSlice.util.invalidateTags([{ type: "Article", id: slug }]))
+    } catch (err) {
+      console.error("Ошибка лайка/дизлайка:", err)
     }
   }
+
   return (
     <article className={styles.wrapper}>
       <div className={styles.cardLeft}>
@@ -45,24 +67,22 @@ function Card({
             {title.length > 30 ? _.truncate(title, { length: 30 }) : title}
           </span>
           <span className={styles.likeContainer} onClick={handleLikeClick}>
-            {favorited ? (
+            {localFavorited ? (
               <IoHeartSharp color={styles.red} />
             ) : (
               <IoHeartOutline />
             )}
-            <span className={styles.likeCount}>{likesNumber}</span>
+            <span className={styles.likeCount}>{localLikes}</span>
           </span>
         </div>
         <div className={styles.cardTags}>
           {tags?.map((el, i) => (
-            // eslint-disable-next-line react/no-array-index-key
             <span className={styles.tag} key={i}>
               {el}
             </span>
           ))}
         </div>
         <span className={styles.cardDescription}>
-          {" "}
           {description.length > 15
             ? _.truncate(description, { length: 75 })
             : description}

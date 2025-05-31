@@ -1,97 +1,90 @@
-import { useSelector, useDispatch } from "react-redux"
 import { useForm, useFieldArray } from "react-hook-form"
-import { selectIsAuth } from "../store/authSlice"
-import { Navigate, useNavigate } from "react-router-dom"
-import { fetchEditArticle } from "../store/articlesSlice"
-
-import { useEffect, useState } from "react"
-import { BASE_URL } from "../service/config"
-import axios from "axios"
+import { useNavigate, useParams, Navigate } from "react-router-dom"
+import { useEffect } from "react"
+import {
+  useEditArticleMutation,
+  useFetchArticleQuery,
+} from "../service/apiSlice"
+import { useFetchCurrentUserQuery } from "../service/authApiSlice"
 import styles from "./EditArticle.module.scss"
 
 function EditArticle() {
-  const isAuth = useSelector(selectIsAuth)
-  const dispatch = useDispatch()
+  const { slug } = useParams()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+
+  const { data: authData, isLoading: isAuthLoading } =
+    useFetchCurrentUserQuery()
+  const isAuth = Boolean(authData?.user)
+
+  const {
+    data,
+    isLoading: isArticleLoading,
+    error,
+  } = useFetchArticleQuery(slug, { refetchOnMountOrArgChange: true })
+  const [editArticle, { isLoading: isEditing }] = useEditArticleMutation()
 
   const {
     register,
     handleSubmit,
     control,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm({
-    mode: "onSubmit",
     defaultValues: {
       title: "",
       description: "",
-      textarea: "",
-      tags: [],
+      body: "",
+      tagList: [],
     },
   })
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "tags",
+    name: "tagList",
   })
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const token = localStorage.getItem("token")
-        const slug = localStorage.getItem("slug")
-        const response = await axios.get(`${BASE_URL}articles/${slug}`, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        })
-
-        const article = response?.data?.article
-
-        reset({
-          title: article.title,
-          description: article.description,
-          textarea: article.body,
-          tags: article.tagList.map((tag) => ({ name: tag })),
-        })
-      } catch (err) {
-        console.error("Ошибка при получении статьи:", err)
-      }
+    if (data?.article) {
+      reset({
+        title: data.article.title,
+        description: data.article.description,
+        body: data.article.body,
+        tagList: data.article.tagList.map((tag) => ({ name: tag })),
+      })
     }
+  }, [data, reset])
 
-    fetchData()
-  }, [reset])
-
-  const onSubmit = async (data) => {
-    setLoading(true)
-    const slug = localStorage.getItem("slug")
-
-    const payload = {
-      slug,
-      userData: {
-        article: {
-          title: data.title,
-          description: data.description,
-          body: data.textarea,
-          tagList: data.tags.map((el) => el.name),
-        },
-      },
-    }
+  const onSubmit = async (formData) => {
+    const filteredTags = formData.tagList
+      .map((t) => t.name.trim())
+      .filter((name) => name.length > 0)
 
     try {
-      await dispatch(fetchEditArticle(payload)).unwrap()
-      navigate("/")
-    } catch (error) {
-      console.error("Ошибка при редактировании статьи:", error)
-    } finally {
-      setLoading(false)
+      await editArticle({
+        slug,
+        userData: {
+          article: {
+            title: formData.title,
+            description: formData.description,
+            body: formData.body,
+            tagList: filteredTags,
+          },
+        },
+      }).unwrap()
+
+      navigate(`/articles/${slug}`)
+    } catch (e) {
+      console.error("Failed to edit article:", e)
+      alert("Error editing article")
     }
   }
 
-  if (!isAuth && !localStorage.getItem("token")) {
+  if (!isAuthLoading && !isAuth && !localStorage.getItem("token")) {
     return <Navigate to="/sign-in" replace />
   }
+
+  if (isArticleLoading) return <div>Loading article...</div>
+  if (error) return <div>Error loading article</div>
 
   return (
     <div className={styles.formContainer}>
@@ -101,11 +94,10 @@ function EditArticle() {
           <label>
             <span className={styles.titleInput}>Title</span>
             <input
-              type="text"
               className={styles.input}
-              {...register("title", { required: "The field is required" })}
+              {...register("title", { required: "Title is required" })}
             />
-            {errors?.title && (
+            {errors.title && (
               <div className={styles.incorrectData}>{errors.title.message}</div>
             )}
           </label>
@@ -115,13 +107,12 @@ function EditArticle() {
           <label>
             <span className={styles.titleInput}>Short description</span>
             <input
-              type="text"
               className={styles.input}
               {...register("description", {
-                required: "The field is required",
+                required: "Description is required",
               })}
             />
-            {errors?.description && (
+            {errors.description && (
               <div className={styles.incorrectData}>
                 {errors.description.message}
               </div>
@@ -134,12 +125,10 @@ function EditArticle() {
             <span className={styles.titleInput}>Description</span>
             <textarea
               className={styles.textInput}
-              {...register("textarea", { required: "The field is required" })}
+              {...register("body", { required: "Body is required" })}
             />
-            {errors?.textarea && (
-              <div className={styles.incorrectData}>
-                {errors.textarea.message}
-              </div>
+            {errors.body && (
+              <div className={styles.incorrectData}>{errors.body.message}</div>
             )}
           </label>
         </div>
@@ -153,7 +142,7 @@ function EditArticle() {
               <input
                 type="text"
                 className={styles.tagInput}
-                {...register(`tags.${index}.name`)}
+                {...register(`tagList.${index}.name`)}
               />
             </label>
             <button
@@ -186,10 +175,10 @@ function EditArticle() {
 
         <button
           type="submit"
-          className={`${styles.submitButton} ${loading ? styles.loading : ""}`}
-          disabled={!isValid || loading}
+          className={`${styles.submitButton} ${isEditing ? styles.loading : ""}`}
+          disabled={isEditing}
         >
-          <span style={{ display: loading ? "none" : "inline" }}>
+          <span style={{ display: isEditing ? "none" : "inline" }}>
             Confirm edit
           </span>
         </button>

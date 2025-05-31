@@ -1,26 +1,34 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import axios from "axios"
-import { useState, useEffect } from "react"
+import React from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { getArticle } from "../service/config"
+import { useFetchArticleQuery } from "../service/apiSlice"
 import Info from "../components/Info/Info"
 import { Skeleton } from "antd"
 
 function Details() {
-  const [article, setArticle] = useState(null)
-  const { push } = useNavigate()
+  const navigate = useNavigate()
   const { slug } = useParams()
 
-  useEffect(() => {
-    axios.get(getArticle(slug)).then(({ data }) => setArticle(data.article))
-  }, [slug])
+  const { data, isLoading, isError, error, refetch } =
+    useFetchArticleQuery(slug)
+
+  if (isLoading) return <Skeleton style={{ marginTop: "20px" }} />
+  if (isError) {
+    console.error("Failed to fetch article:", error)
+    return (
+      <div style={{ marginTop: "20px", color: "red" }}>
+        Error loading article
+      </div>
+    )
+  }
+
+  const article = data?.article
 
   return (
     <div>
       {article ? (
-        <Info push={push} {...article} />
+        <Info {...article} refetch={refetch} />
       ) : (
-        <Skeleton style={{ marginTop: "20px" }} />
+        <div style={{ marginTop: "20px" }}>Article not found</div>
       )}
     </div>
   )

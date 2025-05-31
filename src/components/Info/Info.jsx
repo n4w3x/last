@@ -1,37 +1,31 @@
-/* eslint-disable react/button-has-type */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useState, useEffect, useRef } from "react"
+import React, { useRef, useState, useEffect } from "react"
 import _ from "lodash"
 import { IoHeartOutline, IoHeartSharp } from "react-icons/io5"
 import { format } from "date-fns"
 import ReactMarkdown from "react-markdown"
-import { useDispatch, useSelector } from "react-redux"
-import {
-  fetchDeleteArticle,
-  fetchLikeArticle,
-  fetchLikeDelete,
-} from "../../store/articlesSlice"
 import { message, Popconfirm } from "antd"
 import { useNavigate, Link } from "react-router-dom"
-import { selectIsAuth } from "../../store/authSlice"
-import axios from "axios"
-import { getArticle } from "../../service/config"
 import PropTypes from "prop-types"
 import styles from "./Info.module.scss"
+import {
+  useDeleteArticleMutation,
+  useLikeArticleMutation,
+  useUnlikeArticleMutation,
+} from "../../service/apiSlice"
 
-function Info(props) {
-  const {
-    author,
-    body,
-    createdAt,
-    description,
-    tagList,
-    title,
-    slug,
-    onClick,
-  } = props
-
+function Info({
+  author,
+  body,
+  createdAt,
+  description,
+  tagList,
+  title,
+  slug,
+  onClick,
+  favorited,
+  favoritesCount,
+  refetch,
+}) {
   const wrapperRef = useRef(null)
   const [height, setHeight] = useState(0)
 
@@ -41,76 +35,66 @@ function Info(props) {
         setHeight(wrapperRef.current.offsetHeight)
       }
     }
-
     handleResize()
-
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  const data = JSON.parse(localStorage.getItem("data"))
-
-  const isAuthor = () => {
-    const authorName = data?.user?.username
-    return author?.username === authorName
-  }
+  const [deleteArticle] = useDeleteArticleMutation()
+  const [likeArticle] = useLikeArticleMutation()
+  const [unlikeArticle] = useUnlikeArticleMutation()
   const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const confirm = () => {
-    dispatch(fetchDeleteArticle(slug))
-    navigate("/")
-  }
-  const cancel = () => {
-    message.error("Click on No")
-  }
+  const isAuth = Boolean(localStorage.getItem("token"))
 
-  const isAuth = useSelector(selectIsAuth)
+  const [isLiked, setIsLiked] = useState(favorited)
+  const [likeCount, setLikeCount] = useState(favoritesCount || 0)
 
-  const [article, setArticle] = useState(null)
-  const [likeCount, setLikeCount] = useState(article?.favoritesCount)
-  const [isLiked, setIsLiked] = useState(
-    localStorage.getItem(`like_${slug}`) === "true"
-  )
+  useEffect(() => {
+    setIsLiked(favorited)
+    setLikeCount(favoritesCount || 0)
+  }, [favorited, favoritesCount])
 
-  const handleLikeClick = () => {
-    if (isAuth) {
-      if (!isLiked) {
-        setLikeCount(likeCount + 1)
-        setIsLiked(true)
-        localStorage.setItem(`like_${slug}`, true)
-        dispatch(fetchLikeArticle(slug)).then(() => {
-          setArticle((prevState) => ({
-            ...prevState,
-            favoritesCount: prevState.favoritesCount + 1,
-          }))
-        })
-      } else {
-        setLikeCount(likeCount - 1)
-        setIsLiked(false)
-        localStorage.removeItem(`like_${slug}`)
-        dispatch(fetchLikeDelete(slug)).then(() => {
-          setArticle((prevState) => ({
-            ...prevState,
-            favoritesCount: prevState.favoritesCount - 1,
-          }))
-        })
-      }
-    } else {
-      navigate.push("/")
+  const currentUser = JSON.parse(localStorage.getItem("data"))?.user
+  const isAuthor = currentUser?.username === author?.username
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteArticle(slug).unwrap()
+      message.success("Article deleted")
+      navigate("/")
+    } catch (err) {
+      message.error("Failed to delete article")
     }
   }
 
-  useEffect(() => {
-    axios.get(getArticle(slug)).then(() => setArticle(data.article))
-  }, [])
+  const handleLikeClick = async () => {
+    if (!isAuth) {
+      navigate("/sign-in")
+      return
+    }
 
-  useEffect(() => {
-    localStorage.setItem("slug", slug)
-  }, [slug])
+    try {
+      if (!isLiked) {
+        await likeArticle(slug).unwrap()
+        setIsLiked(true)
+        setLikeCount((count) => count + 1)
+      } else {
+        await unlikeArticle(slug).unwrap()
+        setIsLiked(false)
+        setLikeCount((count) => Math.max(0, count - 1))
+      }
+
+      if (refetch) {
+        refetch()
+      }
+    } catch (err) {
+      message.error("Failed to update like status")
+    }
+  }
 
   return (
     <article
-      className={`${styles.wrapper} ${height > 600 && styles.height}`}
+      className={`${styles.wrapper} ${height > 600 ? styles.height : ""}`}
       ref={wrapperRef}
     >
       <div className={styles.cardContainer}>
@@ -119,18 +103,19 @@ function Info(props) {
             <span className={styles.cardTitle} onClick={onClick}>
               {title.length > 30 ? _.truncate(title, { length: 30 }) : title}
             </span>
-            <span className={styles.likeContainer} onClick={handleLikeClick}>
+            <span
+              className={styles.likeContainer}
+              onClick={handleLikeClick}
+              style={{ cursor: "pointer" }}
+            >
               {isLiked ? <IoHeartSharp color="red" /> : <IoHeartOutline />}
-              <span className={styles.likeCount}>
-                {article?.favoritesCount}
-              </span>
+              <span className={styles.likeCount}>{likeCount}</span>
             </span>
           </div>
           <div className={styles.cardTags}>
-            {tagList?.map((el, i) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <span className={styles.tag} key={i + el}>
-                {el}
+            {tagList?.map((tag, i) => (
+              <span className={styles.tag} key={tag + i}>
+                {tag}
               </span>
             ))}
           </div>
@@ -145,21 +130,22 @@ function Info(props) {
           </div>
           <img
             className={styles.cardImage}
-            src={author.image ? author.image : null}
-            alt={author.image}
+            src={author.image || undefined}
+            alt={author.username}
           />
         </div>
       </div>
       <div className={styles.cardBody}>
         <ReactMarkdown>{body}</ReactMarkdown>
       </div>
-      {isAuthor() ? (
+
+      {isAuthor && (
         <div className={styles.buttonContainer}>
           <Popconfirm
             title="Delete Article"
             description="Are you sure to delete this article?"
-            onConfirm={confirm}
-            onCancel={cancel}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => message.info("Delete cancelled")}
             okText="Yes"
             cancelText="No"
             placement="right"
@@ -170,7 +156,7 @@ function Info(props) {
             Edit
           </Link>
         </div>
-      ) : null}
+      )}
     </article>
   )
 }
@@ -180,6 +166,7 @@ Info.defaultProps = {
   createdAt: "",
   tagList: [],
   onClick: () => {},
+  refetch: null,
 }
 
 Info.propTypes = {
@@ -193,7 +180,10 @@ Info.propTypes = {
   tagList: PropTypes.arrayOf(PropTypes.string),
   title: PropTypes.string.isRequired,
   slug: PropTypes.string.isRequired,
+  favorited: PropTypes.bool.isRequired,
+  favoritesCount: PropTypes.number.isRequired,
   onClick: PropTypes.func,
+  refetch: PropTypes.func,
 }
 
 export default Info

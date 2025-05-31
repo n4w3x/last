@@ -1,234 +1,160 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import React, { useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { useForm, useFieldArray } from "react-hook-form"
+import React from "react"
 import { useNavigate, Navigate } from "react-router-dom"
-import { selectIsAuth } from "../store/authSlice"
-import { fetchCreateArticle } from "../store/articlesSlice"
+import { useForm, useFieldArray } from "react-hook-form"
+import { useFetchCurrentUserQuery } from "../service/authApiSlice"
+import { useCreateArticleMutation } from "../service/apiSlice"
+
 import styles from "./CreateArticle.module.scss"
 
 function CreateArticle() {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const isAuth = useSelector(selectIsAuth)
-  const [loading, setLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [textarea, setTextarea] = useState("")
-  const [tags, setTags] = useState([])
-  const [titleError, setTitleError] = useState(null)
-  const [descriptionError, setDescriptionError] = useState(null)
-  const [textareaError, setTextareaError] = useState(null)
-  const [tagsError, setTagsError] = useState(null)
 
-  const handleTitleChange = (e) => {
-    setTitle(e.target.value)
-    setTitleError(null)
-  }
+  const { data: userData, isLoading: isUserLoading } =
+    useFetchCurrentUserQuery()
+  const isAuth = Boolean(userData?.user)
 
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value)
-    setDescriptionError(null)
-  }
+  const [createArticle, { isLoading }] = useCreateArticleMutation()
 
-  const handleTextareaChange = (e) => {
-    setTextarea(e.target.value)
-    setTextareaError(null)
-  }
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      title: "",
+      description: "",
+      body: "",
+      tagList: [{ name: "" }],
+    },
+  })
 
-  const handleTagChange = (index, value) => {
-    const newTags = [...tags]
-    newTags[index].name = value
-    setTags(newTags)
-    setTagsError(null)
-  }
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "tagList",
+  })
+  const onSubmit = async (data) => {
+    const filteredTags = data.tagList
+      .map((t) => t.name.trim())
+      .filter((name) => name.length > 0)
 
-  const handleAddTag = () => {
-    setTags([...tags, { name: "" }])
-  }
-
-  const handleRemoveTag = (index) => {
-    const newTags = [...tags]
-    newTags.splice(index, 1)
-    setTags(newTags)
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSubmitted(true)
-
-    let hasErrors = false
-
-    if (title.length < 5) {
-      setTitleError("Title must  exceed 5 characters")
-      hasErrors = true
-    }
-
-    if (title.length > 100) {
-      setTitleError("Title must not exceed 100 characters")
-      hasErrors = true
-    }
-
-    if (description.length < 5) {
-      setDescriptionError("Description must exceed 1 characters")
-      hasErrors = true
-    }
-
-    if (description.length > 25) {
-      setDescriptionError("Description must not exceed 150 characters")
-      hasErrors = true
-    }
-
-    if (!textarea) {
-      setTextareaError("The field is required")
-      hasErrors = true
-    }
-
-    if (tags.length === 0) {
-      setTagsError("Please append at least 1 item")
-      hasErrors = true
-    }
-
-    if (hasErrors) {
+    if (filteredTags.length === 0) {
+      alert("Please add at least one tag")
       return
     }
 
-    setLoading(true)
-
     try {
-      const userData = {
+      const articleData = {
         article: {
-          title,
-          description,
-          body: textarea,
-          tagList: tags.map((el) => el.name),
+          title: data.title,
+          description: data.description,
+          body: data.body,
+          tagList: filteredTags,
         },
       }
-      const response = await dispatch(fetchCreateArticle(userData))
-      localStorage.setItem("slug", response.payload.slug)
-      navigate(`/articles/${response.payload.slug}`)
-      localStorage.removeItem("slug")
+
+      const { article } = await createArticle(articleData).unwrap()
+      navigate(`/articles/${article.slug}`)
     } catch (error) {
-      console.error("Error:", error)
-    } finally {
-      setTimeout(() => {
-        setLoading(false)
-        setIsSubmitted(false)
-      }, 0)
+      console.error("Failed to create article:", error)
+      alert("Error creating article")
     }
   }
 
-  if (!isAuth && !localStorage.getItem("token")) {
+  if (!isUserLoading && !isAuth && !localStorage.getItem("token")) {
     return <Navigate to="/sign-in" replace />
   }
 
   return (
     <div className={styles.formContainer}>
       <h3 className={styles.formTitle}>Create new article</h3>
-      <form className={styles.form} onSubmit={handleSubmit}>
+      <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
         <div className={styles.labelContainer}>
-          <label htmlFor="username">
+          <label>
             <span className={styles.titleInput}>Title</span>
             <input
               type="text"
-              name="title"
-              className={`${styles.input} ${isSubmitted && titleError ? styles.invalidInput : ""}`}
-              value={title}
-              onChange={handleTitleChange}
+              className={`${styles.input} ${errors.title ? styles.invalidInput : ""}`}
+              {...register("title", {
+                required: "Title is required",
+                minLength: { value: 5, message: "Min length is 5" },
+                maxLength: { value: 100, message: "Max length is 100" },
+              })}
             />
-            {isSubmitted && titleError && (
-              <div className={styles.incorrectData}>{titleError}</div>
+            {errors.title && (
+              <div className={styles.incorrectData}>{errors.title.message}</div>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
-          <label htmlFor="username">
+          <label>
             <span className={styles.titleInput}>Short description</span>
             <input
               type="text"
-              name="description"
-              className={`${styles.input} ${
-                isSubmitted && descriptionError ? styles.invalidInput : ""
-              }`}
-              value={description}
-              onChange={handleDescriptionChange}
+              className={`${styles.input} ${errors.description ? styles.invalidInput : ""}`}
+              {...register("description", {
+                required: "Description is required",
+                minLength: { value: 5, message: "Min length is 5" },
+                maxLength: { value: 150, message: "Max length is 150" },
+              })}
             />
-            {isSubmitted && descriptionError && (
-              <div className={styles.incorrectData}>{descriptionError}</div>
+            {errors.description && (
+              <div className={styles.incorrectData}>
+                {errors.description.message}
+              </div>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
-          <label htmlFor="textarea">
+          <label>
             <span className={styles.titleInput}>Description</span>
             <textarea
-              type="text"
-              name="textarea"
-              className={styles.textInput}
-              value={textarea}
-              onChange={handleTextareaChange}
+              className={`${styles.textInput} ${errors.body ? styles.invalidInput : ""}`}
+              {...register("body", { required: "Body is required" })}
             />
-            {isSubmitted && textareaError && (
-              <div className={styles.incorrectData}>{textareaError}</div>
+            {errors.body && (
+              <div className={styles.incorrectData}>{errors.body.message}</div>
             )}
           </label>
         </div>
-        {tags.length > 0 ? (
-          tags.map((field, index) => (
-            <section key={index}>
-              <label htmlFor={`tags.${index}.name`}>
-                <input
-                  type="text"
-                  name={`tags.${index}.name`}
-                  className={styles.tagInput}
-                  value={field.name}
-                  onChange={(e) => handleTagChange(index, e.target.value)}
-                />
-              </label>
+
+        {fields.map((field, index) => (
+          <section key={field.id} className={styles.tagSection}>
+            <label>
+              <input
+                type="text"
+                className={styles.tagInput}
+                {...register(`tagList.${index}.name`)}
+                placeholder="Tag"
+              />
+            </label>
+            <button
+              type="button"
+              className={styles.buttonDeleteTag}
+              onClick={() => remove(index)}
+            >
+              Delete Tag
+            </button>
+            {index === fields.length - 1 && (
               <button
                 type="button"
-                className={styles.buttonDeleteTag}
-                onClick={() => {
-                  handleRemoveTag(index)
-                }}
+                className={styles.buttonAddTag}
+                onClick={() => append({ name: "" })}
               >
-                Delete Tag
+                Add Tag
               </button>
-              {index === tags.length - 1 && (
-                <button
-                  type="button"
-                  className={styles.buttonAddTag}
-                  onClick={handleAddTag}
-                >
-                  Add Tag
-                </button>
-              )}
-              {index === tags.length - 1 && field.name === "" && (
-                <div className={styles.warningData}>
-                  Перед отправкой формы, убедитесь что поле не пустое.
-                </div>
-              )}
-            </section>
-          ))
-        ) : (
-          <button
-            type="button"
-            className={styles.buttonAddTag}
-            onClick={handleAddTag}
-          >
-            Add Tag
-          </button>
-        )}
-        {isSubmitted && tagsError && (
-          <div className={styles.incorrectData}>{tagsError}</div>
-        )}
+            )}
+          </section>
+        ))}
+
         <button
           type="submit"
-          className={`${styles.submitButton} ${loading ? styles.loading : ""}`}
-          disabled={loading}
+          className={`${styles.submitButton} ${isLoading ? styles.loading : ""}`}
+          disabled={isLoading}
         >
-          <span style={{ display: loading ? "none" : "inline" }}>Create</span>
+          <span style={{ display: isLoading ? "none" : "inline" }}>Create</span>
         </button>
       </form>
     </div>

@@ -1,25 +1,30 @@
-/* eslint-disable react/button-has-type */
-/* eslint-disable jsx-a11y/alt-text */
 import React from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useSelector, useDispatch } from "react-redux"
-import { selectIsAuth, logout } from "../../store/authSlice"
+import { useFetchCurrentUserQuery } from "../../service/authApiSlice"
 import styles from "./Header.module.scss"
 import _ from "lodash"
 
 function Header() {
-  const isAuth = useSelector(selectIsAuth)
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const name = JSON.parse(localStorage.getItem("data"))
-  const image = name ? name.user.image : null
+
+  const token = localStorage.getItem("token")
+  const { data, isSuccess } = useFetchCurrentUserQuery(undefined, {
+    skip: !token,
+  })
+
+  const user = data?.user
+  const username = user?.username
+  const image = user?.image
+
+  const isAuth = isSuccess && !!user
+
   const onClickLogout = () => {
     if (window.confirm("Вы точно хотите выйти?")) {
-      dispatch(logout())
-      navigate("/")
       localStorage.clear()
+      navigate("/")
     }
   }
+
   return (
     <header className={styles.header}>
       <div className={styles.wrapper}>
@@ -33,9 +38,9 @@ function Header() {
                 Create Article
               </Link>
               <Link className={styles.nameUser} to="/profile">
-                {name?.user?.username && name.user.username.length > 15
-                  ? _.truncate(name.user.username, { length: 15 })
-                  : name.user.username}
+                {username?.length > 15
+                  ? _.truncate(username, { length: 15 })
+                  : username}
               </Link>
               <img
                 className={styles.imageUser}

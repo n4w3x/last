@@ -1,21 +1,19 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useState, useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useDispatch, useSelector } from "react-redux"
-import { fetchAuth, selectIsAuth } from "../store/authSlice"
+import { useLoginMutation } from "../service/authApiSlice"
 import { Navigate } from "react-router-dom"
 import styles from "./RegistrationForm.module.scss"
 
 function LoginForm() {
   const [error, setError] = useState("")
   const [errorPass, setErrorPass] = useState("")
-  const dispatch = useDispatch()
-  const isAuth = useSelector(selectIsAuth)
-  const [loading, setLoading] = useState(false)
+  const [login, { data, isLoading, error: loginError, isSuccess }] =
+    useLoginMutation()
+
   const {
     register,
     handleSubmit,
-    reset,
     watch,
     formState: { isValid },
   } = useForm({
@@ -23,36 +21,6 @@ function LoginForm() {
   })
 
   const email = watch("email")
-
-  const onSubmit = (data) => {
-    setLoading(true)
-    const userData = {
-      user: {
-        email: data.email,
-        password: data.password,
-      },
-    }
-    dispatch(fetchAuth(userData))
-      .then((result) => {
-        if (!result.payload) {
-          setErrorPass("Incorrect password")
-        }
-      })
-      .catch(() => {
-        if (
-          error.response &&
-          error.response.data &&
-          error.response.data.errors
-        ) {
-          setError(error.response.data.errors)
-        } else {
-          setError("An error occurred while processing your request.")
-        }
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
 
   useEffect(() => {
     if (email && !/\S+@\S+\.\S+/.test(email)) {
@@ -62,7 +30,32 @@ function LoginForm() {
     }
   }, [email])
 
-  if (isAuth) {
+  useEffect(() => {
+    if (loginError) {
+      if (loginError.data?.errors) {
+        setError(Object.values(loginError.data.errors).flat().join(", "))
+      } else if (loginError.status === 401) {
+        setErrorPass("Incorrect password")
+      } else {
+        setError("An error occurred while processing your request.")
+      }
+    } else {
+      setError("")
+      setErrorPass("")
+    }
+  }, [loginError])
+
+  const onSubmit = (formData) => {
+    const userData = {
+      user: {
+        email: formData.email,
+        password: formData.password,
+      },
+    }
+    login(userData)
+  }
+
+  if (isSuccess && data?.user?.token) {
     return <Navigate to="/" replace />
   }
 
@@ -77,7 +70,7 @@ function LoginForm() {
               type="email"
               name="email"
               className={styles.input}
-              {...register("email")}
+              {...register("email", { required: true })}
             />
             {error && <span className={styles.incorrectData}>{error}</span>}
           </label>
@@ -89,9 +82,7 @@ function LoginForm() {
               type="password"
               name="password"
               className={styles.input}
-              {...register("password", {
-                required: true,
-              })}
+              {...register("password", { required: true })}
             />
             {errorPass && (
               <span className={styles.incorrectData}>{errorPass}</span>
@@ -101,10 +92,10 @@ function LoginForm() {
 
         <button
           type="submit"
-          className={`${styles.submitButton} ${loading ? styles.loading : ""}`}
-          disabled={!isValid || loading}
+          className={`${styles.submitButton} ${isLoading ? styles.loading : ""}`}
+          disabled={!isValid || isLoading}
         >
-          <span style={{ display: loading ? "none" : "inline" }}>Login</span>
+          <span style={{ display: isLoading ? "none" : "inline" }}>Login</span>
         </button>
       </form>
     </div>

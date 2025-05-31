@@ -1,97 +1,66 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import React, { useState, useEffect } from "react"
+import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
-import { edit } from "../store/authSlice"
-import { useDispatch } from "react-redux"
+import {
+  useEditUserMutation,
+  useFetchCurrentUserQuery,
+} from "../service/authApiSlice"
 import { useNavigate } from "react-router-dom"
-import { BASE_URL } from "../service/config"
-import axios from "axios"
 import styles from "./EditProfileForm.module.scss"
 
 function EditProfileForm() {
-  const [cirrentUserData, setUserData] = useState({})
-  const [error, setError] = useState("")
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+
+  const { data, isLoading, error: fetchError } = useFetchCurrentUserQuery()
+
+  const [editUser, { isLoading: isEditing, error: editError }] =
+    useEditUserMutation()
+
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors, isValid },
   } = useForm({
     mode: "onBlur",
   })
 
-  const email = watch("email")
-
-  const onSubmit = (data) => {
-    setLoading(true)
-    const userData = {
-      user: {
-        username: data.username || cirrentUserData.username,
-        email: data.email || cirrentUserData.email,
-        password: data.password || "",
-        image: data.imageUrl || cirrentUserData.image,
-      },
-    }
-    const token = localStorage.getItem("token")
-
-    axios
-      .put(`${BASE_URL}user`, userData, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      })
-      .then((response) => {
-        dispatch(edit(response.data))
-        navigate("/")
-      })
-      .catch(() => {
-        if (
-          error.response &&
-          error.response.data &&
-          error.response.data.errors
-        ) {
-          setError(error.response.data.errors)
-        } else {
-          setError("An error occurred while processing your request.")
-        }
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
-
   useEffect(() => {
-    async function fetchData() {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${BASE_URL}user`, {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      })
-      setUserData({
-        username: response.data.user.username,
-        email: response.data.user.email,
-        image: response.data.user.image,
-      })
+    if (data?.user) {
+      setValue("username", data.user.username || "")
+      setValue("email", data.user.email || "")
+      setValue("imageUrl", data.user.image || "")
+      setValue("password", "")
     }
-    fetchData()
-  }, [])
+  }, [data, setValue])
+
+  const email = watch("email")
 
   useEffect(() => {
     if (email && !/\S+@\S+\.\S+/.test(email)) {
-      setError("Email data is incorrect")
-    } else {
-      setError("")
     }
   }, [email])
 
-  const handleInputChange = (e) => {
-    setUserData({ ...cirrentUserData, [e.target.name]: e.target.value })
+  const onSubmit = async (formData) => {
+    try {
+      const userData = {
+        user: {
+          username: formData.username,
+          email: formData.email,
+          image: formData.imageUrl,
+          password: formData.password || undefined,
+        },
+      }
+
+      await editUser(userData).unwrap()
+      navigate("/")
+    } catch (err) {
+      console.error("Failed to update user:", err)
+    }
   }
+
+  if (isLoading) return <div>Loading user data...</div>
+  if (fetchError) return <div>Error loading user data</div>
 
   return (
     <div className={styles.formContainer}>
@@ -101,40 +70,45 @@ function EditProfileForm() {
           <label htmlFor="username">
             <span className={styles.titleInput}>Username</span>
             <input
-              value={cirrentUserData.username || ""}
               type="text"
-              name="username"
-              {...register("username")}
-              onChange={handleInputChange}
+              {...register("username", { required: "Username is required" })}
               className={styles.input}
             />
-            {error?.username && (
-              <span className={styles.incorrectData}>{error?.username}</span>
+            {errors.username && (
+              <span className={styles.incorrectData}>
+                {errors.username.message}
+              </span>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="email">
             <span className={styles.titleInput}>Email address</span>
             <input
-              value={cirrentUserData.email || ""}
               type="email"
-              name="email"
-              {...register("email")}
-              onChange={handleInputChange}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /\S+@\S+\.\S+/,
+                  message: "Invalid email address",
+                },
+              })}
               className={styles.input}
             />
-            {error?.email && (
-              <span className={styles.incorrectData}>{error?.email}</span>
+            {errors.email && (
+              <span className={styles.incorrectData}>
+                {errors.email.message}
+              </span>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="password">
             <span className={styles.titleInput}>Password</span>
             <input
               type="password"
-              name="password"
               {...register("password", {
                 minLength: {
                   value: 6,
@@ -147,20 +121,19 @@ function EditProfileForm() {
               })}
               className={styles.input}
             />
-            {errors?.password && (
+            {errors.password && (
               <span className={styles.incorrectData}>
-                {errors?.password?.message}
+                {errors.password.message}
               </span>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="imageUrl">
             <span className={styles.titleInput}>Avatar image (url)</span>
             <input
-              value={cirrentUserData.image || ""}
               type="text"
-              name="imageUrl"
               {...register("imageUrl", {
                 pattern: {
                   value: /^(ftp|http|https):\/\/[^ "]+$/,
@@ -176,12 +149,25 @@ function EditProfileForm() {
             )}
           </label>
         </div>
+
+        {editError && (
+          <div className={styles.incorrectData}>
+            {editError.data?.errors
+              ? Object.entries(editError.data.errors)
+                  .map(
+                    ([field, messages]) => `${field}: ${messages.join(", ")}`
+                  )
+                  .join("; ")
+              : "Failed to update user."}
+          </div>
+        )}
+
         <button
           type="submit"
-          className={`${styles.submitButton} ${loading ? styles.loading : ""}`}
-          disabled={!isValid || loading}
+          className={`${styles.submitButton} ${isEditing ? styles.loading : ""}`}
+          disabled={!isValid || isEditing}
         >
-          <span style={{ display: loading ? "none" : "inline" }}>
+          <span style={{ display: isEditing ? "none" : "inline" }}>
             Confirm edit profile
           </span>
         </button>

@@ -1,19 +1,16 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import React, { useState, useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
 import { useForm } from "react-hook-form"
 import { Link, Navigate } from "react-router-dom"
-import { selectIsAuth, login } from "../store/authSlice"
-import axios from "axios"
-import { BASE_URL } from "../service/config"
+import { useRegisterMutation } from "../service/authApiSlice"
 import styles from "./RegistrationForm.module.scss"
 
 function RegistrationForm() {
   const [error, setError] = useState("")
   const [errorPassword, setErrorPassword] = useState("")
-  const dispatch = useDispatch()
-  const isAuth = useSelector(selectIsAuth)
-  const [loading, setLoading] = useState(false)
+  const [registerUser, { data, isLoading, error: registerError, isSuccess }] =
+    useRegisterMutation()
+
   const {
     register,
     handleSubmit,
@@ -27,36 +24,6 @@ function RegistrationForm() {
   const repeatPassword = watch("repeatPassword")
   const checked = watch("checkbox")
 
-  const onSubmit = async (data) => {
-    setLoading(true)
-    const userData = {
-      user: {
-        username: data.username,
-        email: data.email,
-        password: data.password,
-      },
-    }
-    axios
-      .post(`${BASE_URL}users`, userData)
-      .then((response) => {
-        dispatch(login(response.data))
-      })
-      .catch(() => {
-        if (
-          error.response &&
-          error.response.data &&
-          error.response.data.errors
-        ) {
-          setError(error.response.data.errors)
-        } else {
-          setError("An error occurred while processing your request.")
-        }
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
-
   useEffect(() => {
     if (password !== repeatPassword && repeatPassword.length !== 0) {
       setErrorPassword("Пароли не совпадают")
@@ -65,7 +32,35 @@ function RegistrationForm() {
     }
   }, [password, repeatPassword])
 
-  if (isAuth) {
+  useEffect(() => {
+    if (registerError) {
+      if (registerError.data?.errors) {
+        setError(Object.values(registerError.data.errors).flat().join(", "))
+      } else {
+        setError("An error occurred while processing your request.")
+      }
+    } else {
+      setError("")
+    }
+  }, [registerError])
+
+  const onSubmit = (formData) => {
+    if (!checked) {
+      setError("You have to accept an agreement")
+      return
+    }
+    setError("")
+    const userData = {
+      user: {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      },
+    }
+    registerUser(userData)
+  }
+
+  if (isSuccess && data?.user?.token) {
     return <Navigate to="/" replace />
   }
 
@@ -81,7 +76,7 @@ function RegistrationForm() {
               name="username"
               className={styles.input}
               {...register("username", {
-                required: true,
+                required: "Username is required",
                 minLength: {
                   value: 6,
                   message: "Short name",
@@ -92,16 +87,17 @@ function RegistrationForm() {
                 },
               })}
             />
-            {error?.username && (
-              <span className={styles.incorrectData}>{error?.username}</span>
+            {error?.includes("username") && (
+              <span className={styles.incorrectData}>{error}</span>
             )}
-            {Object.keys(errors).map((key) => (
-              <span className="error" key={key}>
-                {errors[key].message}
+            {errors.username && (
+              <span className={styles.incorrectData}>
+                {errors.username.message}
               </span>
-            ))}
+            )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="email">
             <span className={styles.titleInput}>Email address</span>
@@ -109,13 +105,19 @@ function RegistrationForm() {
               type="email"
               name="email"
               className={styles.input}
-              {...register("email")}
+              {...register("email", { required: "Email is required" })}
             />
-            {error && (
-              <span className={styles.incorrectData}>{error?.email}</span>
+            {error?.includes("email") && (
+              <span className={styles.incorrectData}>{error}</span>
+            )}
+            {errors.email && (
+              <span className={styles.incorrectData}>
+                {errors.email.message}
+              </span>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="password">
             <span className={styles.titleInput}>Password</span>
@@ -124,7 +126,7 @@ function RegistrationForm() {
               name="password"
               className={styles.input}
               {...register("password", {
-                required: "The field is required ",
+                required: "The field is required",
                 minLength: {
                   value: 6,
                   message: "Too short password",
@@ -135,13 +137,14 @@ function RegistrationForm() {
                 },
               })}
             />
-            {errors?.password && (
+            {errors.password && (
               <span className={styles.incorrectData}>
-                {errors?.password?.message}
+                {errors.password.message}
               </span>
             )}
           </label>
         </div>
+
         <div className={styles.labelContainer}>
           <label htmlFor="repeatPassword">
             <span className={styles.titleInput}>Repeat Password</span>
@@ -153,26 +156,29 @@ function RegistrationForm() {
             />
           </label>
         </div>
+
         {errorPassword && (
           <span className={styles.incorrectData}>{errorPassword}</span>
         )}
+
         <div className={styles.labelContainer}>
           <input type="checkbox" name="checkbox" {...register("checkbox")} />
           <span className={styles.titleInput}>
             I agree to the processing of my personal information
           </span>
         </div>
-        {checked ? null : (
+        {!checked && (
           <span className={styles.incorrectData}>
             You have to accept an agreement
           </span>
         )}
+
         <button
           type="submit"
-          className={`${styles.submitButton} ${loading ? styles.loading : ""}`}
-          disabled={!isValid || loading}
+          className={`${styles.submitButton} ${isLoading ? styles.loading : ""}`}
+          disabled={!isValid || isLoading}
         >
-          <span style={{ display: loading ? "none" : "inline" }}>Create</span>
+          <span style={{ display: isLoading ? "none" : "inline" }}>Create</span>
         </button>
       </form>
       <p className={styles.footerTitle}>
