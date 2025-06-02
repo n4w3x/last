@@ -1,11 +1,12 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useLoginMutation } from "../service/authApiSlice"
 import { Navigate } from "react-router-dom"
+
+import { useLoginMutation } from "../service/authApiSlice"
+
 import styles from "./RegistrationForm.module.scss"
 
-function LoginForm() {
+function LoginForm({ setToken }) {
   const [error, setError] = useState("")
   const [errorPass, setErrorPass] = useState("")
   const [login, { data, isLoading, error: loginError, isSuccess }] =
@@ -54,6 +55,13 @@ function LoginForm() {
     }
     login(userData)
   }
+
+  useEffect(() => {
+    if (isSuccess && data?.user?.token) {
+      localStorage.setItem("token", data.user.token)
+      setToken(data.user.token)
+    }
+  }, [isSuccess, data, setToken])
 
   if (isSuccess && data?.user?.token) {
     return <Navigate to="/" replace />

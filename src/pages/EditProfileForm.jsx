@@ -1,10 +1,12 @@
 import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
+
 import {
   useEditUserMutation,
   useFetchCurrentUserQuery,
 } from "../service/authApiSlice"
-import { useNavigate } from "react-router-dom"
+
 import styles from "./EditProfileForm.module.scss"
 
 function EditProfileForm() {
@@ -38,6 +40,7 @@ function EditProfileForm() {
 
   useEffect(() => {
     if (email && !/\S+@\S+\.\S+/.test(email)) {
+      /* empty */
     }
   }, [email])
 

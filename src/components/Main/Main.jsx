@@ -1,6 +1,8 @@
 import React from "react"
-import styles from "./Main.module.scss"
+
 import { useFetchArticlesQuery } from "../../service/apiSlice"
+
+import styles from "./Main.module.scss"
 
 function Main({ children }) {
   const { data: articles = [], isLoading } = useFetchArticlesQuery()

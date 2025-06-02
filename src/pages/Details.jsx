@@ -1,8 +1,9 @@
 import React from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { Skeleton } from "antd"
+
 import { useFetchArticleQuery } from "../service/apiSlice"
 import Info from "../components/Info/Info"
-import { Skeleton } from "antd"
 
 function Details() {
   const navigate = useNavigate()

@@ -1,28 +1,63 @@
 import React from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useFetchCurrentUserQuery } from "../../service/authApiSlice"
-import styles from "./Header.module.scss"
+import { useDispatch } from "react-redux"
 import _ from "lodash"
 
-function Header() {
-  const navigate = useNavigate()
+import { authApi } from "../../service/authApiSlice"
 
-  const token = localStorage.getItem("token")
-  const { data, isSuccess } = useFetchCurrentUserQuery(undefined, {
+import styles from "./Header.module.scss"
+
+function Header({ token, setToken }) {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const {
+    data: userData,
+    isLoading,
+    isError,
+  } = authApi.useFetchCurrentUserQuery(undefined, {
     skip: !token,
   })
 
-  const user = data?.user
-  const username = user?.username
-  const image = user?.image
-
-  const isAuth = isSuccess && !!user
+  const isAuth = Boolean(userData?.user)
+  const username = userData?.user?.username
+  const image = userData?.user?.image
 
   const onClickLogout = () => {
     if (window.confirm("Вы точно хотите выйти?")) {
       localStorage.clear()
+      dispatch(authApi.util.resetApiState())
+      setToken(null)
       navigate("/")
     }
+  }
+
+  if (isLoading) {
+    return (
+      <header className={styles.header}>
+        <div className={styles.wrapper}>Загрузка...</div>
+      </header>
+    )
+  }
+
+  if (isError || !token) {
+    return (
+      <header className={styles.header}>
+        <div className={styles.wrapper}>
+          <Link className={styles.title} to="/">
+            Realworld Blog
+          </Link>
+          <div className={styles.loginContainer}>
+            <Link className={styles.signIn} to="/sign-in">
+              Sign In
+            </Link>
+            <Link className={styles.signUp} to="/sign-up">
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      </header>
+    )
   }
 
   return (
@@ -48,6 +83,7 @@ function Header() {
                   image ||
                   "https://static.productionready.io/images/smiley-cyrus.jpg"
                 }
+                alt="User avatar"
               />
               <button className={styles.buttonLogOut} onClick={onClickLogout}>
                 Log Out

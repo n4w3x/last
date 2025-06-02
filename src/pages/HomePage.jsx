@@ -1,9 +1,11 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { Pagination } from "antd"
+
 import { useFetchArticlesQuery } from "../service/apiSlice"
 import List from "../components/List/List"
 import Card from "../components/Card/Card"
+
 import styles from "./HomePage.module.scss"
 
 function HomePage() {

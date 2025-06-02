@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useRef, useState, useEffect } from "react"
 import _ from "lodash"
 import { IoHeartOutline, IoHeartSharp } from "react-icons/io5"
@@ -6,12 +8,14 @@ import ReactMarkdown from "react-markdown"
 import { message, Popconfirm } from "antd"
 import { useNavigate, Link } from "react-router-dom"
 import PropTypes from "prop-types"
-import styles from "./Info.module.scss"
+
 import {
   useDeleteArticleMutation,
   useLikeArticleMutation,
   useUnlikeArticleMutation,
 } from "../../service/apiSlice"
+
+import styles from "./Info.module.scss"
 
 function Info({
   author,

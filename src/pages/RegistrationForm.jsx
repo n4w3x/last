@@ -1,8 +1,9 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Link, Navigate } from "react-router-dom"
+
 import { useRegisterMutation } from "../service/authApiSlice"
+
 import styles from "./RegistrationForm.module.scss"
 
 function RegistrationForm() {
