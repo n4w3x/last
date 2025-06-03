@@ -1,5 +1,5 @@
 import React from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Pagination } from "antd"
 
 import { useFetchArticlesQuery } from "../service/apiSlice"
@@ -10,7 +10,9 @@ import styles from "./HomePage.module.scss"
 
 function HomePage() {
   const navigate = useNavigate()
-  const [currentPage, setCurrentPage] = React.useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const currentPage = Number(searchParams.get("page")) || 1
   const offset = (currentPage - 1) * 5
 
   const {
@@ -24,7 +26,7 @@ function HomePage() {
   const articlesCount = articleData?.articlesCount || 0
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
+    setSearchParams({ page })
   }
 
   const articlesPagination = (
@@ -57,7 +59,7 @@ function HomePage() {
 
   return (
     <List>
-      {articles.map((el, i) => (
+      {articles.map((el) => (
         <Card
           key={el.slug}
           username={el.author.username}

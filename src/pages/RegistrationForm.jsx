@@ -6,8 +6,7 @@ import { useRegisterMutation } from "../service/authApiSlice"
 
 import styles from "./RegistrationForm.module.scss"
 
-function RegistrationForm() {
-  const [error, setError] = useState("")
+function RegistrationForm({ setToken }) {
   const [errorPassword, setErrorPassword] = useState("")
   const [registerUser, { data, isLoading, error: registerError, isSuccess }] =
     useRegisterMutation()
@@ -16,6 +15,8 @@ function RegistrationForm() {
     register,
     handleSubmit,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm({
     mode: "onBlur",
@@ -34,23 +35,36 @@ function RegistrationForm() {
   }, [password, repeatPassword])
 
   useEffect(() => {
-    if (registerError) {
-      if (registerError.data?.errors) {
-        setError(Object.values(registerError.data.errors).flat().join(", "))
-      } else {
-        setError("An error occurred while processing your request.")
-      }
+    if (registerError && registerError.data?.errors) {
+      Object.entries(registerError.data.errors).forEach(([field, messages]) => {
+        setError(field, {
+          type: "server",
+          message: messages.join(", "),
+        })
+      })
     } else {
-      setError("")
+      clearErrors()
     }
-  }, [registerError])
+  }, [registerError, setError, clearErrors])
+
+  useEffect(() => {
+    if (isSuccess && data?.user?.token) {
+      localStorage.setItem("token", data.user.token)
+      setToken(data.user.token)
+    }
+  }, [isSuccess, data, setToken])
 
   const onSubmit = (formData) => {
     if (!checked) {
-      setError("You have to accept an agreement")
+      setError("checkbox", {
+        type: "manual",
+        message: "You have to accept an agreement",
+      })
       return
     }
-    setError("")
+    setErrorPassword("")
+    clearErrors("checkbox")
+
     const userData = {
       user: {
         username: formData.username,
@@ -88,9 +102,6 @@ function RegistrationForm() {
                 },
               })}
             />
-            {error?.includes("username") && (
-              <span className={styles.incorrectData}>{error}</span>
-            )}
             {errors.username && (
               <span className={styles.incorrectData}>
                 {errors.username.message}
@@ -108,9 +119,6 @@ function RegistrationForm() {
               className={styles.input}
               {...register("email", { required: "Email is required" })}
             />
-            {error?.includes("email") && (
-              <span className={styles.incorrectData}>{error}</span>
-            )}
             {errors.email && (
               <span className={styles.incorrectData}>
                 {errors.email.message}
@@ -167,12 +175,12 @@ function RegistrationForm() {
           <span className={styles.titleInput}>
             I agree to the processing of my personal information
           </span>
+          {errors.checkbox && (
+            <span className={styles.incorrectData}>
+              {errors.checkbox.message}
+            </span>
+          )}
         </div>
-        {!checked && (
-          <span className={styles.incorrectData}>
-            You have to accept an agreement
-          </span>
-        )}
 
         <button
           type="submit"

@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+
 import { BASE_URL } from "../service/config"
 
 const baseQuery = fetchBaseQuery({
@@ -29,7 +30,9 @@ export const authApi = createApi({
           const { data } = await queryFulfilled
           localStorage.setItem("token", data.user.token)
           localStorage.setItem("data", JSON.stringify(data))
-        } catch {}
+        } catch {
+          /* empty */
+        }
       },
     }),
 
@@ -44,7 +47,9 @@ export const authApi = createApi({
           const { data } = await queryFulfilled
           localStorage.setItem("token", data.user.token)
           localStorage.setItem("data", JSON.stringify(data))
-        } catch {}
+        } catch {
+          /* empty */
+        }
       },
     }),
 
@@ -59,7 +64,9 @@ export const authApi = createApi({
           const { data } = await queryFulfilled
           localStorage.setItem("data", JSON.stringify(data))
           localStorage.setItem("image", JSON.stringify(data.user.image))
-        } catch {}
+        } catch {
+          /* empty */
+        }
       },
       invalidatesTags: ["User"],
     }),
@@ -70,7 +77,9 @@ export const authApi = createApi({
         try {
           const { data } = await queryFulfilled
           localStorage.setItem("data", JSON.stringify(data))
-        } catch {}
+        } catch {
+          /* empty */
+        }
       },
       providesTags: ["User"],
     }),

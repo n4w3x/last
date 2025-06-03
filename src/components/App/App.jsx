@@ -47,7 +47,10 @@ function App() {
           <Route path="/articles/:slug/edit" element={<EditArticle />} />
           <Route path="/new-article" element={<CreateArticle />} />
           <Route path="/sign-in" element={<LoginForm setToken={setToken} />} />
-          <Route path="/sign-up" element={<RegistrationForm />} />
+          <Route
+            path="/sign-up"
+            element={<RegistrationForm setToken={setToken} />}
+          />
           <Route path="/profile" element={<EditProfileForm />} />
         </Routes>
       </Main>
