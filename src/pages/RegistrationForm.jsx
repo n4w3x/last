@@ -37,9 +37,12 @@ function RegistrationForm({ setToken }) {
   useEffect(() => {
     if (registerError && registerError.data?.errors) {
       Object.entries(registerError.data.errors).forEach(([field, messages]) => {
+        const message = Array.isArray(messages)
+          ? messages.join(", ")
+          : String(messages)
         setError(field, {
           type: "server",
-          message: messages.join(", "),
+          message,
         })
       })
     } else {
