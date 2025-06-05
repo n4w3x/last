@@ -85,8 +85,14 @@ function EditArticle() {
     return <Navigate to="/sign-in" replace />
   }
 
-  if (isArticleLoading) return <div>Loading article...</div>
+  if (isArticleLoading || isAuthLoading) return <div>Loading article...</div>
   if (error) return <div>Error loading article</div>
+
+  const currentUsername = authData?.user?.username
+  const authorUsername = data?.article?.author?.username
+  if (currentUsername !== authorUsername) {
+    return <Navigate to="/" replace />
+  }
 
   return (
     <div className={styles.formContainer}>
